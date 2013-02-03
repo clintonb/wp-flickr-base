@@ -9,9 +9,26 @@ if(  !class_exists('FlickrWrapper') ) {
 
         function __construct($api_key, $secret = NULL, $token = NULL)
         {
-            unset($_SESSION['phpFlickr_auth_token']);
             $this->phpFlickr = new phpFlickr($api_key, $secret);
+            $this->auth_clear_token();
             $this->phpFlickr->setToken($token);
+        }
+
+        function auth($perms = "read", $remember_uri = true){
+            $this->phpFlickr->auth($perms, $remember_uri);
+        }
+
+        function auth_get_token($frob){
+            return $this->phpFlickr->auth_getToken($frob);
+        }
+
+        function auth_set_token($token){
+            $this->phpFlickr->setToken($token);
+        }
+
+        public function auth_clear_token(){
+            unset($_SESSION['phpFlickr_auth_token']);
+            $this->phpFlickr->setToken('');
         }
 
         function get_photoset($photoset_id)

@@ -9,19 +9,32 @@ Author URI: http://clintonblackburn.com
 License: GPL2
 */
 
-if(  !class_exists('WPFlickrBase') ) {
+function getItem($array, $key, $default = "")
+{
+    return isset($array[$key]) ? $array[$key] : $default;
+}
+
+if (!class_exists('WPFlickrBase')) {
     require_once('FlickrWrapper.php');
 
     class WPFlickrBase
     {
         protected $fw;
+        protected $option_name = 'wp-flickr-base';
 
         function __construct()
         {
-            // Get the API credentials from the database
             $api_key = "";
             $api_secret = "";
             $api_token = "";
+
+            // Get the API credentials from the database
+            $options = get_option($this->option_name);
+            if (!empty($options)) {
+                $api_key = getItem($options, 'flickr_api_key');
+                $api_secret = getItem($options, 'flickr_api_secret');
+                $api_token = getItem($options, 'flickr_api_token');
+            }
 
             // Initialize the Flickr API accessor
             $this->fw = new FlickrWrapper($api_key, $api_secret, $api_token);
@@ -34,6 +47,113 @@ if(  !class_exists('WPFlickrBase') ) {
             // Register, and enqueue, scripts and styles
             add_action('wp_enqueue_scripts', array($this, 'register_scripts_and_styles'));
             add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts_and_styles'));
+
+            // Register Settings
+            add_action('admin_init', array($this, 'admin_init'));
+            add_action('admin_menu', array($this, 'add_admin_page'));
+
+            // Register AJAX action for Flickr authorization
+            add_action('wp_ajax_wpfb_gallery_auth', array($this, 'flickr_auth_init'));
+        }
+
+        public function add_admin_page()
+        {
+            add_options_page('Flickr Options', 'Flickr Options', 'manage_options', 'wp_flickr_base_options', array($this, 'options_do_page'));
+        }
+
+        public function options_do_page()
+        {
+            $options = get_option($this->option_name);
+            ?>
+        <div class="wrap">
+            <h2>Flickr Options</h2>
+
+            <form method="post" action="options.php">
+                <?php settings_fields('wp_flickr_base_options'); ?>
+                <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row">Flickr API Key:</th>
+                        <td><input type="text" name="<?php echo $this->option_name?>[flickr_api_key]"
+                                   value="<?php echo $options['flickr_api_key']; ?>"/></td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">Flickr API Secret:</th>
+                        <td><input type="text" name="<?php echo $this->option_name?>[flickr_api_secret]"
+                                   value="<?php echo $options['flickr_api_secret']; ?>"/></td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">Flickr API Token:</th>
+                        <td>
+                            <?php echo $options['flickr_api_token']; ?>
+                            <input type="button" class="button-primary" value="Grant Access"
+                                   onclick="document.location.href='<?php echo get_admin_url() . 'admin-ajax.php?action=wpfb_gallery_auth'; ?>';"/>
+                        </td>
+                    </tr>
+                </table>
+                <p class="submit">
+                    <input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>"/>
+                </p>
+            </form>
+        </div>
+        <?php
+        }
+
+        function flickr_auth_read()
+        {
+            if (isset($_GET['frob'])) {
+                $auth = $this->fw->auth_get_token($_GET['frob']);
+                $api_token = $auth['token'];
+
+                $options = get_option($this->option_name);
+                $options['flickr_api_token'] = $api_token;
+                update_option($this->option_name, $options);
+
+                $this->fw->auth_set_token($api_token);
+                header('Location: ' . $_SESSION['phpFlickr_auth_redirect']);
+                exit;
+            }
+        }
+
+        function flickr_auth_init()
+        {
+            session_start();
+            $this->fw->auth_clear_token();
+            $this->fw->auth('read', $_SERVER['HTTP_REFERER']);
+            exit;
+        }
+
+        public function admin_init()
+        {
+            register_setting('wp_flickr_base_options', $this->option_name, array($this, 'validate_options'));
+            $this->flickr_auth_read();
+        }
+
+        public function validate_options($input)
+        {
+            $valid = array();
+            $valid['flickr_api_key'] = sanitize_text_field($input['flickr_api_key']);
+            $valid['flickr_api_secret'] = sanitize_text_field($input['flickr_api_secret']);
+            $valid['flickr_api_token'] = sanitize_text_field($input['flickr_api_token']);
+
+            if (strlen($valid['flickr_api_key']) == 0) {
+                add_settings_error(
+                    'flickr_api_key',
+                    'flickr_api_key_texterror',
+                    'Please enter a valid Flickr API key.',
+                    'error'
+                );
+            }
+
+            if (strlen($valid['flickr_api_secret']) == 0) {
+                add_settings_error(
+                    'flickr_api_secret',
+                    'flickr_api_secret_texterror',
+                    'Please enter a valid Flickr API secret.',
+                    'error'
+                );
+            }
+
+            return $valid;
         }
 
         protected function add_shortcodes()
@@ -43,7 +163,7 @@ if(  !class_exists('WPFlickrBase') ) {
             add_shortcode('flickrset', array($this, 'shortcode_flickr_photoset'));
         }
 
-        function register_scripts_and_styles()
+        public function register_scripts_and_styles()
         {
             // Primary stylesheet
             wp_register_style('wp-flickr-base', plugins_url('/css/wp-flickr-base.css', __FILE__));
@@ -53,10 +173,20 @@ if(  !class_exists('WPFlickrBase') ) {
             wp_register_script('photoswipe-jquery', plugins_url('/photoswipe/code.photoswipe.jquery-3.0.5.min.js', __FILE__), array('jquery', 'klass'));
         }
 
-        function enqueue_scripts_and_styles()
+        public function enqueue_scripts_and_styles()
         {
             wp_enqueue_style('wp-flickr-base');
             wp_enqueue_script('photoswipe-jquery');
+        }
+
+        protected function get_post_photoset_id($post_id = NULL)
+        {
+            if (empty($post_id)) {
+                global $post;
+                $post_id = $post->ID;
+            }
+
+            return get_post_meta($post_id, 'flickr_photoset_id', true);
         }
 
         public function shortcode_flickr_photo($atts)
@@ -65,7 +195,7 @@ if(  !class_exists('WPFlickrBase') ) {
             $fw = $this->fw;
 
             extract(shortcode_atts(array(
-                'id' => $fw->get_photoset_primary_photo(get_post_meta($post->ID, 'flickr_photoset_id', true))
+                'id' => $fw->get_photoset_primary_photo($this->get_post_photoset_id())
             ), $atts));
 
             if (empty($id)) {
@@ -81,7 +211,7 @@ if(  !class_exists('WPFlickrBase') ) {
         {
             global $post;
             extract(shortcode_atts(array(
-                'id' => get_post_meta($post->ID, 'flickr_photoset_id', true)
+                'id' => $this->get_post_photoset_id()
             ), $atts));
 
             if (empty($id)) {
