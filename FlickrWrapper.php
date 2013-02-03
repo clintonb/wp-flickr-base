@@ -1,6 +1,6 @@
 <?php
 
-if(  !class_exists('FlickrWrapper') ) {
+if (!class_exists('FlickrWrapper')) {
     require_once('phpFlickr/phpFlickr.php');
 
     class FlickrWrapper
@@ -14,19 +14,28 @@ if(  !class_exists('FlickrWrapper') ) {
             $this->phpFlickr->setToken($token);
         }
 
-        function auth($perms = "read", $remember_uri = true){
+        public function cache_enable($connection, $table, $expire = 600)
+        {
+            $this->phpFlickr->enableCache('db', $connection, $expire, $table);
+        }
+
+        function auth($perms = "read", $remember_uri = true)
+        {
             $this->phpFlickr->auth($perms, $remember_uri);
         }
 
-        function auth_get_token($frob){
+        function auth_get_token($frob)
+        {
             return $this->phpFlickr->auth_getToken($frob);
         }
 
-        function auth_set_token($token){
+        function auth_set_token($token)
+        {
             $this->phpFlickr->setToken($token);
         }
 
-        public function auth_clear_token(){
+        public function auth_clear_token()
+        {
             unset($_SESSION['phpFlickr_auth_token']);
             $this->phpFlickr->setToken('');
         }

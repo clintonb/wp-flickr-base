@@ -20,7 +20,8 @@ if (!class_exists('WPFlickrBase')) {
     class WPFlickrBase
     {
         protected $fw;
-        protected $option_name = 'wp-flickr-base';
+        static protected $option_name = 'wp-flickr-base';
+        static protected $table_name = 'flickr_wrapper_cache';
 
         function __construct()
         {
@@ -29,7 +30,7 @@ if (!class_exists('WPFlickrBase')) {
             $api_token = "";
 
             // Get the API credentials from the database
-            $options = get_option($this->option_name);
+            $options = get_option(self::$option_name);
             if (!empty($options)) {
                 $api_key = getItem($options, 'flickr_api_key');
                 $api_secret = getItem($options, 'flickr_api_secret');
@@ -39,7 +40,10 @@ if (!class_exists('WPFlickrBase')) {
             // Initialize the Flickr API accessor
             $this->fw = new FlickrWrapper($api_key, $api_secret, $api_token);
 
-            // TODO Add activate/deactivate hooks for caching
+            // Enable caching
+            $connection = self::get_connection();
+            $table = self::get_cache_table();
+            $this->fw->cache_enable($connection, $table, 600);
 
             // Add shortcode handlers
             $this->add_shortcodes();
@@ -63,7 +67,7 @@ if (!class_exists('WPFlickrBase')) {
 
         public function options_do_page()
         {
-            $options = get_option($this->option_name);
+            $options = get_option(self::$option_name);
             ?>
         <div class="wrap">
             <h2>Flickr Options</h2>
@@ -73,12 +77,12 @@ if (!class_exists('WPFlickrBase')) {
                 <table class="form-table">
                     <tr valign="top">
                         <th scope="row">Flickr API Key:</th>
-                        <td><input type="text" name="<?php echo $this->option_name?>[flickr_api_key]"
+                        <td><input type="text" name="<?php echo self::$option_name?>[flickr_api_key]"
                                    value="<?php echo $options['flickr_api_key']; ?>"/></td>
                     </tr>
                     <tr valign="top">
                         <th scope="row">Flickr API Secret:</th>
-                        <td><input type="text" name="<?php echo $this->option_name?>[flickr_api_secret]"
+                        <td><input type="text" name="<?php echo self::$option_name?>[flickr_api_secret]"
                                    value="<?php echo $options['flickr_api_secret']; ?>"/></td>
                     </tr>
                     <tr valign="top">
@@ -104,9 +108,9 @@ if (!class_exists('WPFlickrBase')) {
                 $auth = $this->fw->auth_get_token($_GET['frob']);
                 $api_token = $auth['token'];
 
-                $options = get_option($this->option_name);
+                $options = get_option(self::$option_name);
                 $options['flickr_api_token'] = $api_token;
-                update_option($this->option_name, $options);
+                update_option(self::$option_name, $options);
 
                 $this->fw->auth_set_token($api_token);
                 header('Location: ' . $_SESSION['phpFlickr_auth_redirect']);
@@ -124,7 +128,7 @@ if (!class_exists('WPFlickrBase')) {
 
         public function admin_init()
         {
-            register_setting('wp_flickr_base_options', $this->option_name, array($this, 'validate_options'));
+            register_setting('wp_flickr_base_options', self::$option_name, array($this, 'validate_options'));
             $this->flickr_auth_read();
         }
 
@@ -355,7 +359,45 @@ HTML;
             </script>
 HTML;
         }
+
+        static function get_cache_table()
+        {
+            global $wpdb;
+            return $wpdb->prefix . self::$table_name;
+        }
+
+        static private function get_connection()
+        {
+            return sprintf('mysql://%s:%s@%s/%s', DB_USER, DB_PASSWORD, DB_HOST, DB_NAME);
+        }
+
+        static function install()
+        {
+            // Create table
+            $table = self::get_cache_table();
+            $sql = "CREATE TABLE IF NOT EXISTS `$table` (
+                `request` CHAR( 35 ) NOT NULL ,
+                `response` MEDIUMTEXT NOT NULL ,
+                `expiration` DATETIME NOT NULL ,
+                INDEX ( `request` ))";
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+        }
+
+        static function uninstall()
+        {
+            // Delete the options
+            delete_option(self::$option_name);
+
+            // Delete the cache table
+            global $wpdb;
+            $table = self::get_cache_table();
+            $wpdb->query("DROP TABLE IF EXISTS $table");
+        }
     }
 }
 
 $fb = new WPFlickrBase();
+
+register_activation_hook(__FILE__, array('WPFlickrBase', 'install'));
+register_deactivation_hook(__FILE__, array('WPFlickrBase', 'uninstall'));
