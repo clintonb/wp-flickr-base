@@ -183,6 +183,7 @@ if (!class_exists('WPFlickrBase')) {
 
         protected function add_shortcodes()
         {
+            add_shortcode('flickr-download-gallery', array($this, 'shortcode_flickr_download_gallery'));
             add_shortcode('flickr-photo', array($this, 'shortcode_flickr_photo'));
             add_shortcode('flickr-photoset', array($this, 'shortcode_flickr_photoset'));
             add_shortcode('flickrset', array($this, 'shortcode_flickr_photoset'));
@@ -196,27 +197,125 @@ if (!class_exists('WPFlickrBase')) {
             // Photoswipe
             wp_register_script('klass', plugins_url('/photoswipe/lib/klass.min.js', __FILE__));
             wp_register_script('photoswipe-jquery', plugins_url('/photoswipe/code.photoswipe.jquery-3.0.5.min.js', __FILE__), array('jquery', 'klass'));
+
+            // Masonry
+            wp_register_script('masonry', plugins_url('/js/jquery.masonry.min.js', __FILE__), array('jquery'));
+
+            // Bootstrap Image Gallery
+            wp_register_script('load-image', 'http://blueimp.github.com/JavaScript-Load-Image/load-image.min.js');
+            wp_register_script('bootstrap-image-gallery', plugins_url('/Bootstrap-Image-Gallery/js/bootstrap-image-gallery.min.js', __FILE__), array('bootstrap', 'load-image'));
+
+            // Lazy Load
+            wp_register_script('lazy-load', plugins_url('/js/jquery.lazyload.min.js', __FILE__), array('jquery'));
         }
 
         public function enqueue_scripts_and_styles()
         {
             wp_enqueue_style('wp-flickr-base');
             wp_enqueue_script('photoswipe-jquery');
+            wp_enqueue_script('masonry');
+            wp_enqueue_script('bootstrap-image-gallery');
+            wp_enqueue_script('lazy-load');
         }
 
         protected function get_post_photoset_id($post_id = NULL)
         {
             if (empty($post_id)) {
                 global $post;
-                $post_id = $post->ID;
+                if(!empty($post))
+                {
+                    $post_id = $post->ID;
+                }
+                else {
+                    // In the Loop
+                    $post_id = get_the_ID();
+                }
             }
 
             return get_post_meta($post_id, 'flickr_photoset_id', true);
         }
 
+        function create_download_gallery($data)
+        {
+            $id = uniqid();
+            $items = "";
+            $count = count($data);
+            $count_str = $count . ' image' . (($count != 1) ? 's' : '');
+            foreach ($data as $image) {
+                $items .= <<<ITEM
+			<li class="span3">
+				<div class="thumbnail gallery-item" data-href="{$image['url']}" title="{$image['title']}">
+					<img class="lazy" data-original="{$image['thumb_url']}" src="http://placehold.it/{$image['width']}x{$image['height']}&text=Scroll+down+to+load." />
+					<div class="details">
+						<div class="title">{$image['title']}</div>
+						<div class="download">
+							<a href="{$image['orig_url']}">
+								<i class="icon-download-alt icon-white"></i>
+							</a>
+						</div>
+					</div>
+				</div>
+			</li>
+ITEM;
+            }
+
+            return <<<HTML
+	<!-- modal-gallery is the modal dialog used for the image gallery -->
+	<div id="modal-gallery-{$id}" class="modal modal-gallery hide fade">
+	    <div class="modal-header">
+	        <a class="close" data-dismiss="modal">&times;</a>
+	        <h3 class="modal-title"></h3>
+	    </div>
+	    <div class="modal-body"><div class="modal-image"></div></div>
+	    <div class="modal-footer">
+	        <a class="btn btn-info modal-prev"><i class="icon-arrow-left icon-white"></i> Previous</a>
+	        <a class="btn btn-success modal-play modal-slideshow" data-slideshow="3000"><i class="icon-play icon-white"></i> Slideshow</a>
+	        <a class="btn modal-download" target="_blank"><i class="icon-download"></i> Download</a>
+	        <a class="btn btn-primary modal-next">Next <i class="icon-arrow-right icon-white"></i></a>
+	    </div>
+	</div>
+
+	<ul id="{$id}" class="thumbnails gallery-thumbnails" data-toggle="modal-gallery" data-target="#modal-gallery-{$id}" data-selector="div.gallery-item">
+		{$items}
+	</ul>
+
+
+	<script type="text/javascript">
+		jQuery(document).ready(function(){
+		    var title = jQuery(".page-header .title");
+			title.html(title.html() + ' <span class="image-count">({$count_str})</span>');
+			jQuery("img.lazy").lazyload();
+			var container = jQuery('#{$id}');
+
+			container.imagesLoaded( function(){
+			  container.masonry({
+			    itemSelector : '.span3',
+				containerStyle: { position: 'relative' }
+			  });
+			});
+		});
+	</script>
+HTML;
+        }
+
+        public function shortcode_flickr_download_gallery($atts)
+        {
+            $fw = $this->fw;
+
+            extract(shortcode_atts(array(
+                'id' => $this->get_post_photoset_id()
+            ), $atts));
+
+            if (empty($id)) {
+                return "Please provide a photo_id.";
+            }
+
+            $data = $fw->get_photoset($id);
+            return $this->create_download_gallery($data);
+        }
+
         public function shortcode_flickr_photo($atts)
         {
-            global $post;
             $fw = $this->fw;
 
             extract(shortcode_atts(array(
@@ -234,7 +333,6 @@ if (!class_exists('WPFlickrBase')) {
 
         public function shortcode_flickr_photoset($atts)
         {
-            global $post;
             extract(shortcode_atts(array(
                 'id' => $this->get_post_photoset_id()
             ), $atts));
