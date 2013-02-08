@@ -383,9 +383,11 @@ ITEM;
 
             $psOptions = array('allowUserZoom: true');
             $psEventHandlers = '';
+            $downloadToolbar = '';
             if ($download) {
+                $downloadToolbar = "<div class=\"ps-toolbar-download\" style=\"padding-top: 12px;\"><i class=\"icon-download-alt\"></i></div>";
+
                 // Add options
-                array_push($psOptions, "getToolbar: function(){return '<div class=\"ps-toolbar-close\" style=\"padding-top: 12px;\"><i class=\"icon-remove-sign\"></i></div><div class=\"ps-toolbar-play\" style=\"padding-top: 12px;\"><i class=\"icon-play-circle\"></i></div><div class=\"ps-toolbar-previous\" style=\"padding-top: 12px;\"><i class=\"icon-circle-arrow-left\"></i></div><div class=\"ps-toolbar-next\" style=\"padding-top: 12px;\"><i class=\"icon-circle-arrow-right\"></i></div><div class=\"ps-toolbar-download\" style=\"padding-top: 12px;\"><i class=\"icon-download-alt\"></i></div>';}");
                 array_push($psOptions, "getImageMetaData: function(el){ return { orig_url: el.getAttribute('data-original-url') }; }");
 
                 // Add event handlers
@@ -402,6 +404,7 @@ ITEM;
         });
 EVT;
             }
+            array_push($psOptions, "getToolbar: function(){return '<div class=\"ps-toolbar-close\" style=\"padding-top: 12px;\"><i class=\"icon-remove\"></i></div><div class=\"ps-toolbar-play\" style=\"padding-top: 12px;\"><i class=\"icon-play\"></i></div><div class=\"ps-toolbar-previous\" style=\"padding-top: 12px;\"><i class=\"icon-arrow-left\"></i></div><div class=\"ps-toolbar-next\" style=\"padding-top: 12px;\"><i class=\"icon-arrow-right\"></i></div>{$downloadToolbar}';}");
 
             $psOptions = implode(', ', $psOptions);
 
