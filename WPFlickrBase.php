@@ -48,6 +48,9 @@ if (!class_exists('WPFlickrBase')) {
             // Add shortcode handlers
             $this->add_shortcodes();
 
+            // Add filters
+            $this->add_filters();
+
             // Register, and enqueue, scripts and styles
             add_action('wp_enqueue_scripts', array($this, 'register_scripts_and_styles'));
             add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts_and_styles'));
@@ -58,6 +61,24 @@ if (!class_exists('WPFlickrBase')) {
 
             // Register AJAX action for Flickr authorization
             add_action('wp_ajax_wpfb_gallery_auth', array($this, 'flickr_auth_init'));
+        }
+
+        function flickr_post_image_html($html, $post_id, $post_image_id)
+        {
+            if (empty($html)) {
+                // Get the post's Flickr photoset_id
+                $photoset_id = get_post_meta(get_the_ID(), 'flickr_photoset_id', true);
+                if (!empty($photoset_id)) {
+                    $url = $this->fw->get_photoset_primary_photo_url($photoset_id, "small");
+                    $html = "<img src='{$url}' class='wp-post-image img-polaroid'/>";
+                }
+            }
+
+            return $html;
+        }
+
+        protected function add_filters(){
+            add_filter('post_thumbnail_html', array($this, 'flickr_post_image_html'), 10, 3);
         }
 
         public function add_admin_page()
