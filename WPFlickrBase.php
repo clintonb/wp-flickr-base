@@ -311,7 +311,7 @@ HTML;
             return $this->create_photoswipe($data, $fullscreen, $download);
         }
 
-        function create_photoswipe($data, $fullscreen=false, $download = false)
+        function create_photoswipe($data, $fullscreen=false, $download = false, $lazy_load = false)
         {
             if($fullscreen){
                 return $this->create_photoswipe_target($data);
@@ -325,9 +325,10 @@ HTML;
                 $details = "";
 
                 if($download){
+                    $lazy_load = true;
                     $url = str_replace(".jpg", "_d.jpg", $image['orig_url']);
                     $attrs = "data-original-url=\"{$url}\"";
-                    $img_alt = "alt=\"{$image['title']}\"";
+                    $img_alt = $image['title'];
                     $details = <<<DETAILS
                     <div class="details">
 						<div class="title">{$image['title']}</div>
@@ -338,13 +339,19 @@ HTML;
 						</div>
 					</div>
 DETAILS;
-
                 }
+
+                $img = "<img class=\"ps-thumbnail\" src=\"{$image['thumb_url']}\" alt=\"{$img_alt}\" />";
+
+                if($lazy_load){
+                    $img = "<img class=\"lazy ps-thumbnail\" data-original=\"{$image['thumb_url']}\" src=\"http://placehold.it/{$image['width']}x{$image['height']}&text=Scroll+down+to+load.\" alt=\"{$img_alt}\" />";
+                }
+
                 $items .= <<<ITEM
             <li class="span3">
                 <div class="thumbnail">
                     <a class="ps-trigger" href="{$image['url']}" title="{$image['title']}" {$attrs}>
-                        <img class="lazy ps-thumbnail" data-original="{$image['thumb_url']}" src="http://placehold.it/{$image['width']}x{$image['height']}&text=Scroll+down+to+load." {$img_alt} />
+                        {$img}
                     </a>
                     {$details}
                 </div>
@@ -364,7 +371,6 @@ ITEM;
                     var title = jQuery(".page-header .title");
 			        title.html(title.html() + ' <span class="image-count">({$count_str})</span>');
 COUNT_JS;
-
 
                 $downloadToolbar = "<div class=\"ps-toolbar-download\" style=\"padding-top: 12px;\" title=\"Download image\"><i class=\"icon-download-alt\"></i></div>";
 
