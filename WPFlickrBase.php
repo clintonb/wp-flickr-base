@@ -308,11 +308,11 @@ HTML;
             ), $atts));
 
             if (empty($id)) {
-                echo "Please provide a photo_id.";
+                return "Please provide a photo_id.";
             }
 
             $data = $fw->get_photoset($id);
-            echo $this->create_download_gallery($data);
+            return $this->create_download_gallery($data);
         }
 
         public function shortcode_flickr_photo($atts)
@@ -324,12 +324,11 @@ HTML;
             ), $atts));
 
             if (empty($id)) {
-                echo "Please provide a photo_id.";
-                return;
+                return "Please provide a photo_id.";
             }
 
             $url = $fw->get_photo_url($id);
-            echo $this->display_image($url);
+            return $this->display_image($url);
         }
 
         public function shortcode_flickr_photoset($atts)
@@ -339,11 +338,10 @@ HTML;
             ), $atts));
 
             if (empty($id)) {
-                echo "Please provide a photoset_id.";
-                return;
+                return "Please provide a photoset_id.";
             }
 
-            echo $this->portfolio_slideshow($id);
+            return $this->portfolio_slideshow($id);
         }
 
         public function shortcode_flickr_photoset_fullscreen($atts)
@@ -353,11 +351,10 @@ HTML;
             ), $atts));
 
             if (empty($id)) {
-                echo "Please provide a photoset_id.";
-                return;
+                return "Please provide a photoset_id.";
             }
 
-            echo $this->portfolio_slideshow($id, true);
+            return $this->portfolio_slideshow($id, true);
         }
 
         function display_image($url, $caption = "")
