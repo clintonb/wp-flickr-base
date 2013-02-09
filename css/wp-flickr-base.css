@@ -5,8 +5,8 @@ div.ps-document-overlay{background:#000;}
 div.ps-uilayer{background:#000;cursor:pointer;}
 div.ps-zoom-pan-rotate{background:#000;}
 div.ps-zoom-pan-rotate *{display:block;}
-div.ps-carousel-item-loading{background:url(photoswipe/loader.gif) no-repeat center center;}
-div.ps-carousel-item-error{background:url(photoswipe/error.gif) no-repeat center center;}
+div.ps-carousel-item-loading{background:url(../photoswipe/loader.gif) no-repeat center center;}
+div.ps-carousel-item-error{background:url(../photoswipe/error.gif) no-repeat center center;}
 div.ps-caption{background:#000000;background:-moz-linear-gradient(top, #303130 0%, #000101 100%);background:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #303130), color-stop(100%, #000101));border-bottom:1px solid #42403f;color:#ffffff;font-size:13px;font-family:"Lucida Grande",Helvetica,Arial,Verdana,sans-serif;text-align:center;}
 div.ps-caption *{display:inline;}
 div.ps-caption-bottom{border-top:1px solid #42403f;border-bottom:none;min-height:44px;}
@@ -60,3 +60,4 @@ div.ps-toolbar-play div.ps-toolbar-content{background-position:-88px 0;}
 .details .download{position:absolute;top:10px;right:5px;font-size:20px;}
 .details a,.details a:hover{color:white;text-decoration:none;}
 div.ps-toolbar{font-size:20px;}div.ps-toolbar .ps-toolbar-download{cursor:pointer;display:table-cell;}
+.photoswipe-target{height:100%;width:100%;}

@@ -6079,7 +6079,7 @@
 				e.preventDefault();
 			}
 			else if (e.keyCode === 13) { // Enter
-				e.preventDefault();
+				//e.preventDefault();
 				this.play();
 			}
 			

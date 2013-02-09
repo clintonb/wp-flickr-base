@@ -186,6 +186,7 @@ if (!class_exists('WPFlickrBase')) {
             add_shortcode('flickr-download-gallery', array($this, 'shortcode_flickr_download_gallery'));
             add_shortcode('flickr-photo', array($this, 'shortcode_flickr_photo'));
             add_shortcode('flickr-photoset', array($this, 'shortcode_flickr_photoset'));
+            add_shortcode('flickr-photoset-fullscreen', array($this, 'shortcode_flickr_photoset_fullscreen'));
             add_shortcode('flickrset', array($this, 'shortcode_flickr_photoset'));
         }
 
@@ -307,11 +308,11 @@ HTML;
             ), $atts));
 
             if (empty($id)) {
-                return "Please provide a photo_id.";
+                echo "Please provide a photo_id.";
             }
 
             $data = $fw->get_photoset($id);
-            return $this->create_download_gallery($data);
+            echo $this->create_download_gallery($data);
         }
 
         public function shortcode_flickr_photo($atts)
@@ -345,6 +346,20 @@ HTML;
             echo $this->portfolio_slideshow($id);
         }
 
+        public function shortcode_flickr_photoset_fullscreen($atts)
+        {
+            extract(shortcode_atts(array(
+                'id' => $this->get_post_photoset_id()
+            ), $atts));
+
+            if (empty($id)) {
+                echo "Please provide a photoset_id.";
+                return;
+            }
+
+            echo $this->portfolio_slideshow($id, true);
+        }
+
         function display_image($url, $caption = "")
         {
             if (empty($url)) {
@@ -364,14 +379,18 @@ HTML;
 HTML;
         }
 
-        function portfolio_slideshow($photoset_id)
+        function portfolio_slideshow($photoset_id, $fullscreen=false)
         {
             $data = $this->fw->get_photoset($photoset_id);
-            return $this->create_photoswipe($data);
+            return $this->create_photoswipe($data, $fullscreen);
         }
 
-        function create_photoswipe($data, $download = false)
+        function create_photoswipe($data, $fullscreen=false, $download = false)
         {
+            if($fullscreen){
+                return $this->create_photoswipe_target($data);
+            }
+
             $id = 'id_' . uniqid();
             $items = "";
             foreach ($data as $image) {
@@ -443,7 +462,7 @@ HTML;
             }, $data);
             $urls_concat = implode(', ', $urls);
 
-            echo <<<HTML
+            return <<<HTML
             <div id="{$id}" class="photoswipe-target"></div>
 
             <script type="text/javascript">
@@ -469,6 +488,9 @@ HTML;
                                 },
                                 getImageCaption: function(obj){
                                     return obj.caption;
+                                },
+                                getToolbar: function(){
+                                    return '<div class=\"ps-toolbar-play\" style=\"padding-top: 12px;\"><i class=\"icon-play\"></i></div><div class=\"ps-toolbar-previous\" style=\"padding-top: 12px;\"><i class=\"icon-arrow-left\"></i></div><div class=\"ps-toolbar-next\" style=\"padding-top: 12px;\"><i class=\"icon-arrow-right\"></i></div>';
                                 }
                             }
                         );
