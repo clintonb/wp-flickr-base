@@ -202,10 +202,6 @@ if (!class_exists('WPFlickrBase')) {
             // Masonry
             wp_register_script('masonry', plugins_url('/js/jquery.masonry.min.js', __FILE__), array('jquery'));
 
-            // Bootstrap Image Gallery
-            wp_register_script('load-image', 'http://blueimp.github.com/JavaScript-Load-Image/load-image.min.js');
-            wp_register_script('bootstrap-image-gallery', plugins_url('/Bootstrap-Image-Gallery/js/bootstrap-image-gallery.min.js', __FILE__), array('bootstrap', 'load-image'));
-
             // Lazy Load
             wp_register_script('lazy-load', plugins_url('/js/jquery.lazyload.min.js', __FILE__), array('jquery'));
         }
@@ -215,7 +211,6 @@ if (!class_exists('WPFlickrBase')) {
             wp_enqueue_style('wp-flickr-base');
             wp_enqueue_script('photoswipe-jquery');
             wp_enqueue_script('masonry');
-            wp_enqueue_script('bootstrap-image-gallery');
             wp_enqueue_script('lazy-load');
         }
 
@@ -236,73 +231,8 @@ if (!class_exists('WPFlickrBase')) {
             return get_post_meta($post_id, 'flickr_photoset_id', true);
         }
 
-        function create_download_gallery($data)
-        {
-            $id = uniqid();
-            $items = "";
-            $count = count($data);
-            $count_str = $count . ' image' . (($count != 1) ? 's' : '');
-            foreach ($data as $image) {
-                $items .= <<<ITEM
-			<li class="span3">
-				<div class="thumbnail gallery-item" data-href="{$image['url']}" title="{$image['title']}">
-					<img class="lazy" data-original="{$image['thumb_url']}" src="http://placehold.it/{$image['width']}x{$image['height']}&text=Scroll+down+to+load." />
-					<div class="details">
-						<div class="title">{$image['title']}</div>
-						<div class="download">
-							<a href="{$image['orig_url']}">
-								<i class="icon-download-alt icon-white"></i>
-							</a>
-						</div>
-					</div>
-				</div>
-			</li>
-ITEM;
-            }
-
-            return <<<HTML
-	<!-- modal-gallery is the modal dialog used for the image gallery -->
-	<div id="modal-gallery-{$id}" class="modal modal-gallery hide fade">
-	    <div class="modal-header">
-	        <a class="close" data-dismiss="modal">&times;</a>
-	        <h3 class="modal-title"></h3>
-	    </div>
-	    <div class="modal-body"><div class="modal-image"></div></div>
-	    <div class="modal-footer">
-	        <a class="btn btn-info modal-prev"><i class="icon-arrow-left icon-white"></i> Previous</a>
-	        <a class="btn btn-success modal-play modal-slideshow" data-slideshow="3000"><i class="icon-play icon-white"></i> Slideshow</a>
-	        <a class="btn modal-download" target="_blank"><i class="icon-download"></i> Download</a>
-	        <a class="btn btn-primary modal-next">Next <i class="icon-arrow-right icon-white"></i></a>
-	    </div>
-	</div>
-
-	<ul id="{$id}" class="thumbnails gallery-thumbnails" data-toggle="modal-gallery" data-target="#modal-gallery-{$id}" data-selector="div.gallery-item">
-		{$items}
-	</ul>
-
-
-	<script type="text/javascript">
-		jQuery(document).ready(function(){
-		    var title = jQuery(".page-header .title");
-			title.html(title.html() + ' <span class="image-count">({$count_str})</span>');
-			jQuery("img.lazy").lazyload();
-			var container = jQuery('#{$id}');
-
-			container.imagesLoaded( function(){
-			  container.masonry({
-			    itemSelector : '.span3',
-				containerStyle: { position: 'relative' }
-			  });
-			});
-		});
-	</script>
-HTML;
-        }
-
         public function shortcode_flickr_download_gallery($atts)
         {
-            $fw = $this->fw;
-
             extract(shortcode_atts(array(
                 'id' => $this->get_post_photoset_id()
             ), $atts));
@@ -311,8 +241,7 @@ HTML;
                 return "Please provide a photo_id.";
             }
 
-            $data = $fw->get_photoset($id);
-            return $this->create_download_gallery($data);
+            return $this->portfolio_slideshow($id, false, true);
         }
 
         public function shortcode_flickr_photo($atts)
@@ -376,10 +305,10 @@ HTML;
 HTML;
         }
 
-        function portfolio_slideshow($photoset_id, $fullscreen=false)
+        function portfolio_slideshow($photoset_id, $fullscreen=false, $download = false)
         {
             $data = $this->fw->get_photoset($photoset_id);
-            return $this->create_photoswipe($data, $fullscreen);
+            return $this->create_photoswipe($data, $fullscreen, $download);
         }
 
         function create_photoswipe($data, $fullscreen=false, $download = false)
@@ -391,17 +320,53 @@ HTML;
             $id = 'id_' . uniqid();
             $items = "";
             foreach ($data as $image) {
-                $orig_url = $download ? "data-original-url=\"{$image['orig_url']}\"" : '';
+                $attrs = "";
+                $img_alt = "";
+                $details = "";
+
+                if($download){
+                    $url = str_replace(".jpg", "_d.jpg", $image['orig_url']);
+                    $attrs = "data-original-url=\"{$url}\"";
+                    $img_alt = "alt=\"{$image['title']}\"";
+                    $details = <<<DETAILS
+                    <div class="details">
+						<div class="title">{$image['title']}</div>
+						<div class="download" title="Download image">
+							<a href="{$url}">
+								<i class="icon-download-alt icon-white"></i>
+							</a>
+						</div>
+					</div>
+DETAILS;
+
+                }
                 $items .= <<<ITEM
-            <li class="span3"><div class="thumbnail"><a href="{$image['url']}" title="{$image['title']}" {$orig_url}><img class="ps-thumbnail" src="{$image['thumb_url']}" /></a></div></li>
+            <li class="span3">
+                <div class="thumbnail">
+                    <a class="ps-trigger" href="{$image['url']}" title="{$image['title']}" {$attrs}>
+                        <img class="lazy ps-thumbnail" data-original="{$image['thumb_url']}" src="http://placehold.it/{$image['width']}x{$image['height']}&text=Scroll+down+to+load." {$img_alt} />
+                    </a>
+                    {$details}
+                </div>
+            </li>
 ITEM;
             }
 
             $psOptions = array('allowUserZoom: true');
             $psEventHandlers = '';
             $downloadToolbar = '';
+            $count_js = "";
+
             if ($download) {
-                $downloadToolbar = "<div class=\"ps-toolbar-download\" style=\"padding-top: 12px;\"><i class=\"icon-download-alt\"></i></div>";
+                $count = count($data);
+                $count_str = $count . ' image' . (($count != 1) ? 's' : '');
+                $count_js = <<<COUNT_JS
+                    var title = jQuery(".page-header .title");
+			        title.html(title.html() + ' <span class="image-count">({$count_str})</span>');
+COUNT_JS;
+
+
+                $downloadToolbar = "<div class=\"ps-toolbar-download\" style=\"padding-top: 12px;\" title=\"Download image\"><i class=\"icon-download-alt\"></i></div>";
 
                 // Add options
                 array_push($psOptions, "getImageMetaData: function(el){ return { orig_url: el.getAttribute('data-original-url') }; }");
@@ -415,12 +380,12 @@ ITEM;
         instance.addEventHandler(PhotoSwipe.EventTypes.onToolbarTap, function(e){
             if (e.toolbarAction === PhotoSwipe.Toolbar.ToolbarAction.none && (e.tapTarget === elDownload || Util.DOM.isChildOf(e.tapTarget, elDownload))){
                 var currentImage = instance.getCurrentImage();
-                window.open(currentImage.metaData.orig_url.replace('.jpg', '_d.jpg'));
+                window.open(currentImage.metaData.orig_url);
             }
         });
 EVT;
             }
-            array_push($psOptions, "getToolbar: function(){return '<div class=\"ps-toolbar-close\" style=\"padding-top: 12px;\"><i class=\"icon-remove\"></i></div><div class=\"ps-toolbar-play\" style=\"padding-top: 12px;\"><i class=\"icon-play\"></i></div><div class=\"ps-toolbar-previous\" style=\"padding-top: 12px;\"><i class=\"icon-arrow-left\"></i></div><div class=\"ps-toolbar-next\" style=\"padding-top: 12px;\"><i class=\"icon-arrow-right\"></i></div>{$downloadToolbar}';}");
+            array_push($psOptions, "getToolbar: function(){return '<div class=\"ps-toolbar-close\" style=\"padding-top: 12px;\" title=\"Close slideshow\"><i class=\"icon-remove\"></i></div><div class=\"ps-toolbar-play\" style=\"padding-top: 12px;\" title=\"Start slideshow\"><i class=\"icon-play\"></i></div><div class=\"ps-toolbar-previous\" style=\"padding-top: 12px;\" title=\"Previous image\"><i class=\"icon-arrow-left\"></i></div><div class=\"ps-toolbar-next\" style=\"padding-top: 12px;\" title=\"Next image\"><i class=\"icon-arrow-right\"></i></div>{$downloadToolbar}';}");
 
             $psOptions = implode(', ', $psOptions);
 
@@ -432,13 +397,20 @@ EVT;
         <script type="text/javascript">
             (function(window, Util, PhotoSwipe){
                 jQuery(document).ready(function(){
-                    var instance = jQuery("#{$id} a").photoSwipe({
+                    {$count_js}
+
+                    var instance = jQuery("#{$id} a.ps-trigger").photoSwipe({
                         {$psOptions}
                     });
 
                     {$psEventHandlers}
 
                     var container = jQuery('#{$id}');
+
+                    // Lazy load
+                    jQuery("img.lazy", container).lazyload();
+
+                    // Masonry
                     container.imagesLoaded( function(){
                       container.masonry({
                         itemSelector : '.span3',
