@@ -69,7 +69,7 @@ if (!class_exists('WPFlickrBase')) {
                 // Get the post's Flickr photoset_id
                 $photoset_id = get_post_meta(get_the_ID(), 'flickr_photoset_id', true);
                 if (!empty($photoset_id)) {
-                    $url = $this->fw->get_photoset_primary_photo_url($photoset_id, "small");
+                    $url = $this->fw->get_photoset_primary_photo_url($photoset_id, "medium");
                     $html = "<img src='{$url}' class='wp-post-image img-polaroid'/>";
                 }
             }
