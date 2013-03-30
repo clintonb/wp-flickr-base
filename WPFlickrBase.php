@@ -61,6 +61,9 @@ if (!class_exists('WPFlickrBase')) {
 
             // Register AJAX action for Flickr authorization
             add_action('wp_ajax_wpfb_gallery_auth', array($this, 'flickr_auth_init'));
+
+            // Register AJAX action for clearing the cache
+            add_action('wp_ajax_wpfb_clear_cache', array($this, 'clear_cache'));
         }
 
         function flickr_post_image_html($html, $post_id, $post_image_id)
@@ -112,6 +115,13 @@ if (!class_exists('WPFlickrBase')) {
                             <?php echo $options['flickr_api_token']; ?>
                             <input type="button" class="button-primary" value="Grant Access"
                                    onclick="document.location.href='<?php echo get_admin_url() . 'admin-ajax.php?action=wpfb_gallery_auth'; ?>';"/>
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">Cache:</th>
+                        <td>
+                            <input type="button" class="button-primary" value="Reset"
+                                   onclick="document.location.href='<?php echo get_admin_url() . 'admin-ajax.php?action=wpfb_clear_cache'; ?>';"/>
                         </td>
                     </tr>
                 </table>
@@ -512,6 +522,12 @@ HTML;
             global $wpdb;
             $table = self::get_cache_table();
             $wpdb->query("DROP TABLE IF EXISTS $table");
+        }
+
+        static function clear_cache(){
+            global $wpdb;
+            $table = self::get_cache_table();
+            $wpdb->query("TRUNCATE TABLE $table");
         }
     }
 }
