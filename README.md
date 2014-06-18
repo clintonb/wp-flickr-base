@@ -18,5 +18,5 @@ Shortcode     | Action        | Example    | Demo
 ------------- | ------------- | ---------- | ------
 flickr-download-gallery  | Displays a grid of photos, each with a download link. Clicking on a photo enters a slideshow. | [flickr-download-gallery id="12345"] | http://clintonblackburn.com/clients/joemmys-shots/
 flickr-photo  | Displays a single photo | [flickr-photo id="12345"] | --
-flickr-photoset | Displays a grid of photos. Clicking on a photo enters a slideshow. | [flickr-photoset id="12345"] |  http://clintonblackburn.com/san-francisco/
+flickr-photoset | Displays a grid of photos. Clicking on a photo enters a slideshow. | [flickr-photoset id="12345"] |  http://clintonblackburn.com/camelopardalid-meteor-shower/
 flickr-photoset-fullscreen | Displays a set of photos as a fullscreen slideshow. | [flickr-photoset-fullscreen id="12345"] | http://clintonblackburn.com/
