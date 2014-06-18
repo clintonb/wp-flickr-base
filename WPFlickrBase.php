@@ -331,14 +331,13 @@ HTML;
             $items = "";
             foreach ($data as $image) {
                 $attrs = "";
-                $img_alt = "";
+                $img_alt = $image['title'];
                 $details = "";
 
                 if($download){
                     $lazy_load = true;
                     $url = str_replace(".jpg", "_d.jpg", $image['orig_url']);
                     $attrs = "data-original-url=\"{$url}\"";
-                    $img_alt = $image['title'];
                     $details = <<<DETAILS
                     <div class="details">
 						<div class="title">{$image['title']}</div>
@@ -360,7 +359,7 @@ DETAILS;
                 $items .= <<<ITEM
             <li class="span3">
                 <div class="thumbnail">
-                    <a class="ps-trigger" href="{$image['url']}" title="{$image['title']}" {$attrs}>
+                    <a class="ps-trigger" href="{$image['url']}" title="{$image['title']}" data-description="{$image['description']}" {$attrs}>
                         {$img}
                     </a>
                     {$details}
@@ -373,6 +372,25 @@ ITEM;
             $psEventHandlers = '';
             $downloadToolbar = '';
             $count_js = "";
+
+            // Custom JS to build a multi-line caption
+            $caption_js = <<<JS
+            function(el){
+              var title = el.getAttribute('title').trim();
+              var description = (el.getAttribute('data-description') || "").trim();
+
+              if(!description){
+                return title;
+              }
+
+              var captionEl = document.createElement('div');
+              captionEl.appendChild(document.createTextNode(title));
+              captionEl.appendChild (document.createElement('br'));
+              captionEl.appendChild(document.createTextNode(description));
+              return captionEl;
+            }
+JS;
+            array_push($psOptions, "getImageCaption: {$caption_js}");
 
             if ($download) {
                 $count = count($data);

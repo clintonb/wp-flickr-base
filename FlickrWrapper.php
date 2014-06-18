@@ -47,13 +47,14 @@ if (!class_exists('FlickrWrapper')) {
                 return NULL;
             }
 
-            $photoset = $this->phpFlickr->photosets_getPhotos($photoset_id, 'url_l,url_m,url_o', '12345');
+            $photoset = $this->phpFlickr->photosets_getPhotos($photoset_id, 'url_l,url_m,url_o,description', '12345');
 
             // Build a new array
             $data = array();
             foreach ($photoset['photoset']['photo'] as $image) {
                 $data[] = array(
                     'title' => $image['title'],
+                    'description' => $image['description'],
                     'url' => $image['url_l'],
                     'orig_url' => $image['url_o'],
                     'thumb_url' => $image['url_m'],
