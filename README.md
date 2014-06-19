@@ -6,9 +6,10 @@ This plugin adds shortcodes for retrieving a single photo or a set of photos fro
 Configuration
 -----
 
-1. Install the contents into your plugins directory.
-2. Activate the plugin.
-3. You should now see a *Flickr Options* settings page.  Enter your Flicker API Key/Secret here.
+1. Create a new Flickr app at https://www.flickr.com/services/ and set your callback URL to the URL of your site's admin section (e.g. http://clintonblackburn.com/wp-admin/)
+2. Install the contents into your plugins directory.
+3. Activate the plugin.
+4. You should now see a *Flickr Options* settings page.  Enter your Flicker API Key/Secret here.
 
 
 Usage
