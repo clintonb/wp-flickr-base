@@ -22,6 +22,7 @@ if (!class_exists('WPFlickrBase')) {
         protected $fw;
         static protected $option_name = 'wp-flickr-base';
         static protected $table_name = 'flickr_wrapper_cache';
+        static protected $options_page_name = 'wp_flickr_base_options';
 
         function __construct()
         {
@@ -86,7 +87,7 @@ if (!class_exists('WPFlickrBase')) {
 
         public function add_admin_page()
         {
-            add_options_page('Flickr Options', 'Flickr Options', 'manage_options', 'wp_flickr_base_options', array($this, 'options_do_page'));
+            add_options_page('Flickr Options', 'Flickr Options', 'manage_options', self::$options_page_name, array($this, 'options_do_page'));
         }
 
         public function options_do_page()
@@ -96,8 +97,16 @@ if (!class_exists('WPFlickrBase')) {
         <div class="wrap">
             <h2>Flickr Options</h2>
 
+            <p>
+              <ol>
+                <li>Enter your API key and secret.</li>
+                <li>Click "Save Changes" to save the key and secret, and reset the API token.</li>
+                <li>Click "Grant Access" to reauthenticate with Flickr. You will be redirected to this page after authentication, and the API token should be set.</li>
+              </ol>
+            </p>
+
             <form method="post" action="options.php">
-                <?php settings_fields('wp_flickr_base_options'); ?>
+                <?php settings_fields(self::$options_page_name); ?>
                 <table class="form-table">
                     <tr valign="top">
                         <th scope="row">Flickr API Key:</th>
@@ -144,7 +153,7 @@ if (!class_exists('WPFlickrBase')) {
                 update_option(self::$option_name, $options);
 
                 $this->fw->auth_set_token($api_token);
-                header('Location: ' . $_SESSION['phpFlickr_auth_redirect']);
+                wp_safe_redirect(admin_url('options-general.php?page=' . self::$options_page_name));
                 exit;
             }
         }
@@ -159,7 +168,7 @@ if (!class_exists('WPFlickrBase')) {
 
         public function admin_init()
         {
-            register_setting('wp_flickr_base_options', self::$option_name, array($this, 'validate_options'));
+            register_setting(self::$options_page_name, self::$option_name, array($this, 'validate_options'));
             $this->flickr_auth_read();
         }
 
