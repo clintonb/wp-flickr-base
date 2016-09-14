@@ -3,7 +3,7 @@
 Plugin Name: wp-flickr-base
 Plugin URI: http://clintonblackburn.com/wp-flickr-base
 Description: Basic Flickr API accessor and slideshow generator
-Version: 0.1
+Version: 0.1.0
 Author: Clinton Blackburn
 Author URI: http://clintonblackburn.com
 License: GPL2
