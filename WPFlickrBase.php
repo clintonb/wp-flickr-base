@@ -218,9 +218,6 @@ if (!class_exists('WPFlickrBase')) {
             wp_register_script('klass', plugins_url('/photoswipe/lib/klass.min.js', __FILE__));
             wp_register_script('photoswipe-jquery', plugins_url('/photoswipe/code.photoswipe.jquery-3.0.5.min.js', __FILE__), array('jquery', 'klass'));
 
-            // Masonry
-            wp_register_script('masonry', plugins_url('/js/jquery.masonry.min.js', __FILE__), array('jquery'));
-
             // Lazy Load
             wp_register_script('lazy-load', plugins_url('/js/jquery.lazyload.min.js', __FILE__), array('jquery'));
         }
@@ -229,7 +226,7 @@ if (!class_exists('WPFlickrBase')) {
         {
             wp_enqueue_style('wp-flickr-base');
             wp_enqueue_script('photoswipe-jquery');
-            wp_enqueue_script('masonry');
+            wp_enqueue_script('jquery-masonry');
             wp_enqueue_script('lazy-load');
         }
 
