@@ -359,7 +359,7 @@ DETAILS;
                 $img = "<img class=\"ps-thumbnail\" src=\"{$image['thumb_url']}\" alt=\"{$img_alt}\" />";
 
                 if($lazy_load){
-                    $img = "<img class=\"lazy ps-thumbnail\" data-original=\"{$image['thumb_url']}\" src=\"http://placehold.it/{$image['width']}x{$image['height']}&text=Scroll+down+to+load.\" alt=\"{$img_alt}\" />";
+                    $img = "<img class=\"lazy ps-thumbnail\" data-original=\"{$image['thumb_url']}\" src=\"https://placehold.it/{$image['width']}x{$image['height']}&text=Scroll+down+to+load.\" alt=\"{$img_alt}\" />";
                 }
 
                 $items .= <<<ITEM
