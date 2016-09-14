@@ -26,6 +26,8 @@ if (!class_exists('FlickrWrapper')) {
 
         function auth_get_token($frob)
         {
+            // Remove the token because phpFlickr will not re-authorize if a token is already set.
+            $this->auth_set_token(NULL);
             return $this->phpFlickr->auth_getToken($frob);
         }
 
@@ -37,7 +39,7 @@ if (!class_exists('FlickrWrapper')) {
         public function auth_clear_token()
         {
             unset($_SESSION['phpFlickr_auth_token']);
-            $this->phpFlickr->setToken('');
+            $this->auth_set_token(NULL);
         }
 
         function get_photoset($photoset_id)
