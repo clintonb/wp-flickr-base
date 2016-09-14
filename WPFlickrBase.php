@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: wp-flickr-base
-Plugin URI: http://clintonblackburn.com/wp-flickr-base
+Plugin URI: https://github.com/clintonb/wp-flickr-base
 Description: Basic Flickr API accessor and slideshow generator
 Version: 0.1.0
 Author: Clinton Blackburn
-Author URI: http://clintonblackburn.com
+Author URI: https://clintonblackburn.com
 License: GPL2
 */
 
