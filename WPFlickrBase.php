@@ -23,6 +23,7 @@ if (!class_exists('WPFlickrBase')) {
         static protected $option_name = 'wp-flickr-base';
         static protected $table_name = 'flickr_wrapper_cache';
         static protected $options_page_name = 'wp_flickr_base_options';
+        static protected $cache_cleared_qs_param = 'cache_cleared';
 
         function __construct()
         {
@@ -64,7 +65,7 @@ if (!class_exists('WPFlickrBase')) {
             add_action('wp_ajax_wpfb_gallery_auth', array($this, 'flickr_auth_init'));
 
             // Register AJAX action for clearing the cache
-            add_action('wp_ajax_wpfb_clear_cache', array($this, 'clear_cache'));
+            add_action('wp_ajax_wpfb_clear_cache', array($this, 'clear_cache_and_redirect'));
         }
 
         function flickr_post_image_html($html, $post_id, $post_image_id)
@@ -90,12 +91,30 @@ if (!class_exists('WPFlickrBase')) {
             add_options_page('Flickr Options', 'Flickr Options', 'manage_options', self::$options_page_name, array($this, 'options_do_page'));
         }
 
+        public function notify_cache_cleared()
+        {
+            ?>
+            <div class="notice notice-success">
+                <p><?php _e('Cache cleared!'); ?></p>
+            </div>
+            <?php
+        }
+
         public function options_do_page()
         {
-            $options = get_option(self::$option_name);
             ?>
         <div class="wrap">
             <h2>Flickr Options</h2>
+
+            <?php
+            // NOTE (CCB): My attempts to use add_action('admin_notices', array($this, 'notify_cache_cleared'))
+            // failed. The callback never seemed to be called. Hence, this "hack".
+            if (isset($_GET[self::$cache_cleared_qs_param])) {
+                $this->notify_cache_cleared();
+            }
+
+            $options = get_option(self::$option_name);
+            ?>
 
             <p>
               <ol>
@@ -552,6 +571,20 @@ HTML;
             global $wpdb;
             $table = self::get_cache_table();
             $wpdb->query("TRUNCATE TABLE $table");
+        }
+
+        /**
+         * Clears the cache and redirects to the options page.
+         */
+        function clear_cache_and_redirect()
+        {
+            $this->clear_cache();
+            $qs = http_build_query(array(
+                'page' => self::$options_page_name,
+                self::$cache_cleared_qs_param => 1
+            ));
+            wp_safe_redirect(admin_url("options-general.php?{$qs}"));
+            exit;
         }
     }
 }
