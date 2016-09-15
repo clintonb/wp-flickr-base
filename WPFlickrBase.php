@@ -82,7 +82,8 @@ if (!class_exists('WPFlickrBase')) {
             return $html;
         }
 
-        protected function add_filters(){
+        protected function add_filters()
+        {
             add_filter('post_thumbnail_html', array($this, 'flickr_post_image_html'), 10, 3);
         }
 
@@ -103,62 +104,64 @@ if (!class_exists('WPFlickrBase')) {
         public function options_do_page()
         {
             ?>
-        <div class="wrap">
-            <h2>Flickr Options</h2>
+            <div class="wrap">
+                <h2>Flickr Options</h2>
 
-            <?php
-            // NOTE (CCB): My attempts to use add_action('admin_notices', array($this, 'notify_cache_cleared'))
-            // failed. The callback never seemed to be called. Hence, this "hack".
-            if (isset($_GET[self::$cache_cleared_qs_param])) {
-                $this->notify_cache_cleared();
-            }
+                <?php
+                // NOTE (CCB): My attempts to use add_action('admin_notices', array($this, 'notify_cache_cleared'))
+                // failed. The callback never seemed to be called. Hence, this "hack".
+                if (isset($_GET[self::$cache_cleared_qs_param])) {
+                    $this->notify_cache_cleared();
+                }
 
-            $options = get_option(self::$option_name);
-            ?>
+                $options = get_option(self::$option_name);
+                ?>
 
-            <p>
-              <ol>
-                <li>Enter your API key and secret.</li>
-                <li>Click "Save Changes" to save the key and secret, and reset the API token.</li>
-                <li>Click "Grant Access" to reauthenticate with Flickr. You will be redirected to this page after authentication, and the API token should be set.</li>
-              </ol>
-            </p>
-
-            <form method="post" action="options.php">
-                <?php settings_fields(self::$options_page_name); ?>
-                <table class="form-table">
-                    <tr valign="top">
-                        <th scope="row">Flickr API Key:</th>
-                        <td><input type="text" name="<?php echo self::$option_name?>[flickr_api_key]"
-                                   value="<?php echo $options['flickr_api_key']; ?>"/></td>
-                    </tr>
-                    <tr valign="top">
-                        <th scope="row">Flickr API Secret:</th>
-                        <td><input type="text" name="<?php echo self::$option_name?>[flickr_api_secret]"
-                                   value="<?php echo $options['flickr_api_secret']; ?>"/></td>
-                    </tr>
-                    <tr valign="top">
-                        <th scope="row">Flickr API Token:</th>
-                        <td>
-                            <?php echo $options['flickr_api_token']; ?>
-                            <input type="button" class="button-primary" value="Grant Access"
-                                   onclick="document.location.href='<?php echo get_admin_url() . 'admin-ajax.php?action=wpfb_gallery_auth'; ?>';"/>
-                        </td>
-                    </tr>
-                    <tr valign="top">
-                        <th scope="row">Cache:</th>
-                        <td>
-                            <input type="button" class="button-primary" value="Reset"
-                                   onclick="document.location.href='<?php echo get_admin_url() . 'admin-ajax.php?action=wpfb_clear_cache'; ?>';"/>
-                        </td>
-                    </tr>
-                </table>
-                <p class="submit">
-                    <input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>"/>
+                <p>
+                <ol>
+                    <li>Enter your API key and secret.</li>
+                    <li>Click "Save Changes" to save the key and secret, and reset the API token.</li>
+                    <li>Click "Grant Access" to reauthenticate with Flickr. You will be redirected to this page after
+                        authentication, and the API token should be set.
+                    </li>
+                </ol>
                 </p>
-            </form>
-        </div>
-        <?php
+
+                <form method="post" action="options.php">
+                    <?php settings_fields(self::$options_page_name); ?>
+                    <table class="form-table">
+                        <tr valign="top">
+                            <th scope="row">Flickr API Key:</th>
+                            <td><input type="text" name="<?php echo self::$option_name ?>[flickr_api_key]"
+                                       value="<?php echo $options['flickr_api_key']; ?>"/></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Flickr API Secret:</th>
+                            <td><input type="text" name="<?php echo self::$option_name ?>[flickr_api_secret]"
+                                       value="<?php echo $options['flickr_api_secret']; ?>"/></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Flickr API Token:</th>
+                            <td>
+                                <?php echo $options['flickr_api_token']; ?>
+                                <input type="button" class="button-primary" value="Grant Access"
+                                       onclick="document.location.href='<?php echo get_admin_url() . 'admin-ajax.php?action=wpfb_gallery_auth'; ?>';"/>
+                            </td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Cache:</th>
+                            <td>
+                                <input type="button" class="button-primary" value="Reset"
+                                       onclick="document.location.href='<?php echo get_admin_url() . 'admin-ajax.php?action=wpfb_clear_cache'; ?>';"/>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="submit">
+                        <input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>"/>
+                    </p>
+                </form>
+            </div>
+            <?php
         }
 
         function flickr_auth_read()
@@ -253,11 +256,9 @@ if (!class_exists('WPFlickrBase')) {
         {
             if (empty($post_id)) {
                 global $post;
-                if(!empty($post))
-                {
+                if (!empty($post)) {
                     $post_id = $post->ID;
-                }
-                else {
+                } else {
                     // In the Loop
                     $post_id = get_the_ID();
                 }
@@ -340,15 +341,15 @@ if (!class_exists('WPFlickrBase')) {
 HTML;
         }
 
-        function portfolio_slideshow($photoset_id, $fullscreen=false, $download = false)
+        function portfolio_slideshow($photoset_id, $fullscreen = false, $download = false)
         {
             $data = $this->fw->get_photoset($photoset_id);
             return $this->create_photoswipe($data, $fullscreen, $download);
         }
 
-        function create_photoswipe($data, $fullscreen=false, $download = false, $lazy_load = false)
+        function create_photoswipe($data, $fullscreen = false, $download = false, $lazy_load = false)
         {
-            if($fullscreen){
+            if ($fullscreen) {
                 return $this->create_photoswipe_target($data);
             }
 
@@ -359,7 +360,7 @@ HTML;
                 $img_alt = $image['title'];
                 $details = "";
 
-                if($download){
+                if ($download) {
                     $lazy_load = true;
                     $url = str_replace(".jpg", "_d.jpg", $image['orig_url']);
                     $attrs = "data-original-url=\"{$url}\"";
@@ -377,7 +378,7 @@ DETAILS;
 
                 $img = "<img class=\"ps-thumbnail\" src=\"{$image['thumb_url']}\" alt=\"{$img_alt}\" />";
 
-                if($lazy_load){
+                if ($lazy_load) {
                     $img = "<img class=\"lazy ps-thumbnail\" data-original=\"{$image['thumb_url']}\" src=\"https://placehold.it/{$image['width']}x{$image['height']}&text=Scroll+down+to+load.\" alt=\"{$img_alt}\" />";
                 }
 
@@ -567,7 +568,8 @@ HTML;
             $wpdb->query("DROP TABLE IF EXISTS $table");
         }
 
-        static function clear_cache(){
+        static function clear_cache()
+        {
             global $wpdb;
             $table = self::get_cache_table();
             $wpdb->query("TRUNCATE TABLE $table");
