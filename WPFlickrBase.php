@@ -68,13 +68,24 @@ if (!class_exists('WPFlickrBase')) {
             add_action('wp_ajax_wpfb_clear_cache', array($this, 'clear_cache_and_redirect'));
         }
 
+        function get_post_image_url($post_id)
+        {
+            $url = null;
+            $photoset_id = $this->get_post_photoset_id($post_id);
+
+            if (!empty($photoset_id)) {
+                $url = $this->fw->get_photoset_primary_photo_url($photoset_id, "medium");
+            }
+
+            return $url;
+        }
+
         function flickr_post_image_html($html, $post_id, $post_image_id)
         {
             if (empty($html)) {
-                // Get the post's Flickr photoset_id
-                $photoset_id = get_post_meta(get_the_ID(), 'flickr_photoset_id', true);
-                if (!empty($photoset_id)) {
-                    $url = $this->fw->get_photoset_primary_photo_url($photoset_id, "medium");
+                $url = $this->get_post_image_url($post_id);
+
+                if (!empty($url)) {
                     $html = "<img src='{$url}' class='wp-post-image img-polaroid'/>";
                 }
             }
@@ -82,9 +93,21 @@ if (!class_exists('WPFlickrBase')) {
             return $html;
         }
 
+        function get_post_metadata($null, $post_id, $key = '', $single = false)
+        {
+            // If using the Facebook Open Graph plugin set the featured image URL to the custom Flickr image.
+            // See https://wordpress.org/plugins/wonderm00ns-simple-facebook-open-graph-tags/.
+            if ($key == '_webdados_fb_open_graph_specific_image') {
+                return $this->get_post_image_url(get_the_ID());
+            }
+
+            return null;
+        }
+
         protected function add_filters()
         {
             add_filter('post_thumbnail_html', array($this, 'flickr_post_image_html'), 10, 3);
+            add_filter('get_post_metadata', array($this, 'get_post_metadata'), 10, 4);
         }
 
         public function add_admin_page()
