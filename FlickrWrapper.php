@@ -1,17 +1,26 @@
 <?php
 
-if (!class_exists('FlickrWrapper')) {
-    require_once('phpFlickr/phpFlickr.php');
+require_once 'vendor/autoload.php';
 
+use Samwilson\PhpFlickr\PhpFlickr;
+
+
+if (!class_exists('FlickrWrapper')) {
     class FlickrWrapper
     {
-        private $phpFlickr;
+        private PhpFlickr $phpFlickr;
+        private string|NULL $userId;
 
-        function __construct($api_key, $secret = NULL, $token = NULL)
+        function __construct($api_key, $secret, $userId = NULL, $accessToken = NULL, $accessTokenSecret = NULL)
         {
-            $this->phpFlickr = new phpFlickr($api_key, $secret);
-            $this->auth_clear_token();
-            $this->phpFlickr->setToken($token);
+            $this->userId = $userId;
+            $this->phpFlickr = new PhpFlickr($api_key, $secret);
+            $storage = new \OAuth\Common\Storage\Session();
+            $this->phpFlickr->setOauthStorage($storage);
+
+            if (!empty($accessToken) && !empty($accessTokenSecret)) {
+                $this->setAccessToken($accessToken, $accessTokenSecret);
+            }
         }
 
         public function cache_enable($connection, $table, $expire = 600)
@@ -19,27 +28,39 @@ if (!class_exists('FlickrWrapper')) {
             $this->phpFlickr->enableCache('db', $connection, $expire, $table);
         }
 
-        function auth($perms = "read", $remember_uri = true)
+        function auth($callbackUrl, $perms = "read")
         {
-            $this->phpFlickr->auth($perms, $remember_uri);
+            $url = $this->phpFlickr->getAuthUrl($perms, $callbackUrl);
+            header("Location: $url");
+            exit();
         }
 
-        function auth_get_token($frob)
+        function retrieveAccessToken($verifier, $requestToken)
         {
-            // Remove the token because phpFlickr will not re-authorize if a token is already set.
-            $this->auth_set_token(NULL);
-            return $this->phpFlickr->auth_getToken($frob);
+            return $this->phpFlickr->retrieveAccessToken($verifier, $requestToken);
         }
 
-        function auth_set_token($token)
+        function setAccessToken($accessToken, $accessTokenSecret)
         {
-            $this->phpFlickr->setToken($token);
+            $token = new \OAuth\OAuth1\Token\StdOAuth1Token();
+            $token->setAccessToken($accessToken);
+            $token->setAccessTokenSecret($accessTokenSecret);
+            $storage = $this->phpFlickr->getOauthTokenStorage();
+            $storage->storeAccessToken('Flickr', $token);
+            $this->phpFlickr->setOauthStorage($storage);
         }
 
         public function auth_clear_token()
         {
-            unset($_SESSION['phpFlickr_auth_token']);
-            $this->auth_set_token(NULL);
+            try {
+                $this->phpFlickr->getOauthTokenStorage()->clearAllTokens();
+            } catch (\Samwilson\PhpFlickr\FlickrException $e) {
+            }
+        }
+
+        public function getUserId() {
+            $profileUrl = $this->phpFlickr->urls()->getUserProfile();
+            return $this->phpFlickr->urls()->lookupUser($profileUrl)['id'];
         }
 
         function get_photoset($photoset_id)
@@ -49,11 +70,11 @@ if (!class_exists('FlickrWrapper')) {
                 return NULL;
             }
 
-            $photoset = $this->phpFlickr->photosets_getPhotos($photoset_id, 'url_l,url_m,url_o,description', '12345');
+            $photoset = $this->phpFlickr->photosets()->getPhotos($photoset_id, $this->userId, 'url_l,url_m,url_o,description');
 
             // Build a new array
             $data = array();
-            foreach ($photoset['photoset']['photo'] as $image) {
+            foreach ($photoset['photo'] as $image) {
                 $data[] = array(
                     'title' => $image['title'],
                     'description' => $image['description'],
@@ -68,21 +89,25 @@ if (!class_exists('FlickrWrapper')) {
             return $data;
         }
 
-        function get_photo_url($photo_id, $size = "medium")
+        function get_photo_url($photo_id, $desiredSize = "medium")
         {
             if (empty($photo_id)) {
                 echo "Please provide a photo_id.";
                 return null;
             }
 
-            $photo_sizes = $this->phpFlickr->photos_getSizes($photo_id);
-            $size = strtolower($size);
-            $filter = function ($el) use ($size) {
-                return strtolower($el['label']) == $size;
-            };
-            $photo_sizes = array_filter($photo_sizes, $filter);
-            $photo = current($photo_sizes);
-            return $photo['source'];
+            $photo_sizes = $this->phpFlickr->photos()->getSizes($photo_id)['size'];
+            $desiredSize = strtolower($desiredSize);
+
+            foreach ($photo_sizes as $index => $size) {
+                if (strtolower($size['label']) == $desiredSize) {
+                    // Image URL
+                    return $size['source'];
+                }
+            }
+
+            // TODO Use a better default
+            return $photo_sizes[0]['source'];
         }
 
         function get_photoset_primary_photo($photoset_id)
@@ -92,7 +117,7 @@ if (!class_exists('FlickrWrapper')) {
                 return null;
             }
 
-            $photoset = $this->phpFlickr->photosets_getInfo($photoset_id);
+            $photoset = $this->phpFlickr->photosets()->getInfo($photoset_id, $this->userId);
             return $photoset['primary'];
         }
 

@@ -1,0 +1,10 @@
+/vendor/
+/.idea/
+/composer.lock
+/examples/.env
+/examples/config.php
+/examples/cache/
+/tests/config.php
+/config.php
+/cache/
+.phpunit.result.cache

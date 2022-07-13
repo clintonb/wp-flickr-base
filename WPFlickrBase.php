@@ -19,28 +19,24 @@ if (!class_exists('WPFlickrBase')) {
 
     class WPFlickrBase
     {
-        protected $fw;
-        static protected $option_name = 'wp-flickr-base';
-        static protected $table_name = 'flickr_wrapper_cache';
-        static protected $options_page_name = 'wp_flickr_base_options';
-        static protected $cache_cleared_qs_param = 'cache_cleared';
+        protected FlickrWrapper $fw;
+        static protected string $option_name = 'wp-flickr-base';
+        static protected string $table_name = 'flickr_wrapper_cache';
+        static protected string $options_page_name = 'wp_flickr_base_options';
+        static protected string $cache_cleared_qs_param = 'cache_cleared';
 
         function __construct()
         {
-            $api_key = "";
-            $api_secret = "";
-            $api_token = "";
-
             // Get the API credentials from the database
-            $options = get_option(self::$option_name);
-            if (!empty($options)) {
-                $api_key = getItem($options, 'flickr_api_key');
-                $api_secret = getItem($options, 'flickr_api_secret');
-                $api_token = getItem($options, 'flickr_api_token');
-            }
+            $options = $this->get_option();
+            $api_key = $options['flickr_api_key'];
+            $api_secret = $options['flickr_api_secret'];
+            $userId = $options['flickr_api_user_id'];
+            $accessToken = $options['flickr_api_access_token'];
+            $accessTokenSecret = $options['flickr_api_access_token_secret'];
 
             // Initialize the Flickr API accessor
-            $this->fw = new FlickrWrapper($api_key, $api_secret, $api_token);
+            $this->fw = new FlickrWrapper($api_key, $api_secret, $userId, $accessToken, $accessTokenSecret);
 
             // Enable caching
             $connection = self::get_connection();
@@ -65,7 +61,19 @@ if (!class_exists('WPFlickrBase')) {
             add_action('wp_ajax_wpfb_gallery_auth', array($this, 'flickr_auth_init'));
 
             // Register AJAX action for clearing the cache
-            add_action('wp_ajax_wpfb_clear_cache', array($this, 'clear_cache_and_redirect'));
+            add_action('wp_ajax_wpfb_clear_cache', array($this, 'wpfb_clear_cache'));
+        }
+
+        private function get_option() {
+            $option_values = get_option(self::$option_name);
+            $default_values = array(
+                    'flickr_api_key' => '',
+                    'flickr_api_secret' => '',
+                    'flickr_api_user_id' => NULL,
+                    'flickr_api_access_token' => NULL,
+                    'flickr_api_access_token_secret' => NULL,
+            );
+            return shortcode_atts($default_values, $option_values);
         }
 
         function get_post_image_url($post_id)
@@ -137,7 +145,7 @@ if (!class_exists('WPFlickrBase')) {
                     $this->notify_cache_cleared();
                 }
 
-                $options = get_option(self::$option_name);
+                $options = $this->get_option();
                 ?>
 
                 <p>
@@ -164,11 +172,21 @@ if (!class_exists('WPFlickrBase')) {
                                        value="<?php echo $options['flickr_api_secret']; ?>"/></td>
                         </tr>
                         <tr valign="top">
-                            <th scope="row">Flickr API Token:</th>
+                            <th scope="row">Flickr User ID:</th>
+                            <td><?php echo $options['flickr_api_user_id']; ?></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Flickr API Access Token:</th>
                             <td>
-                                <?php echo $options['flickr_api_token']; ?>
+                                <?php echo $options['flickr_api_access_token']; ?>
                                 <input type="button" class="button-primary" value="Grant Access"
                                        onclick="document.location.href='<?php echo get_admin_url() . 'admin-ajax.php?action=wpfb_gallery_auth'; ?>';"/>
+                            </td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Flickr API Access Token Secret:</th>
+                            <td>
+                                <?php echo $options['flickr_api_access_token_secret']; ?>
                             </td>
                         </tr>
                         <tr valign="top">
@@ -189,26 +207,37 @@ if (!class_exists('WPFlickrBase')) {
 
         function flickr_auth_read()
         {
-            if (isset($_GET['frob'])) {
-                $auth = $this->fw->auth_get_token($_GET['frob']);
-                $api_token = $auth['token'];
+            if (isset($_GET['oauth_verifier']) && isset($_GET['oauth_token'])) {
+                // TODO Fix this once https://github.com/samwilson/phpflickr/issues/50 is resolved.
+                //  For now we need to use the desktop login, and manually persist the access tokens.
+                $token = $this->fw->retrieveAccessToken($_GET['oauth_verifier'], $_GET['oauth_token']);
+                $accessToken = $token->getAccessToken();
+                $accessTokenSecret = $token->getAccessTokenSecret();
 
-                $options = get_option(self::$option_name);
-                $options['flickr_api_token'] = $api_token;
+                $this->fw->setAccessToken($accessToken, $accessTokenSecret);
+                $userId = $this->fw->getUserId();
+
+                $options = $this->get_option();
+                $options['flickr_api_access_token'] = $accessToken;
+                $options['flickr_api_access_token_secret'] = $accessTokenSecret;
+                $options['flickr_api_user_id'] = $userId;
                 update_option(self::$option_name, $options);
 
-                $this->fw->auth_set_token($api_token);
-                wp_safe_redirect(admin_url('options-general.php?page=' . self::$options_page_name));
-                exit;
+                // Remove the querystring parameters so we don't attempt to save the data again.
+                wp_safe_redirect($this->callbackUrl());
+                wp_die();
             }
+        }
+
+        function callbackUrl() {
+            return admin_url('options-general.php?page=' . self::$options_page_name);
         }
 
         function flickr_auth_init()
         {
-            session_start();
             $this->fw->auth_clear_token();
-            $this->fw->auth('read', $_SERVER['HTTP_REFERER']);
-            exit;
+            $this->fw->auth($this->callbackUrl(), 'read');
+            wp_die();
         }
 
         public function admin_init()
@@ -222,7 +251,9 @@ if (!class_exists('WPFlickrBase')) {
             $valid = array();
             $valid['flickr_api_key'] = sanitize_text_field($input['flickr_api_key']);
             $valid['flickr_api_secret'] = sanitize_text_field($input['flickr_api_secret']);
-            $valid['flickr_api_token'] = sanitize_text_field($input['flickr_api_token']);
+            $valid['flickr_api_user_id'] = sanitize_text_field($input['flickr_api_user_id']);
+            $valid['flickr_api_access_token'] = sanitize_text_field($input['flickr_api_access_token']);
+            $valid['flickr_api_access_token_secret'] = sanitize_text_field($input['flickr_api_access_token_secret']);
 
             if (strlen($valid['flickr_api_key']) == 0) {
                 add_settings_error(
@@ -601,7 +632,7 @@ HTML;
         /**
          * Clears the cache and redirects to the options page.
          */
-        function clear_cache_and_redirect()
+        function wpfb_clear_cache()
         {
             $this->clear_cache();
             $qs = http_build_query(array(
@@ -609,7 +640,7 @@ HTML;
                 self::$cache_cleared_qs_param => 1
             ));
             wp_safe_redirect(admin_url("options-general.php?{$qs}"));
-            exit;
+            wp_die();
         }
     }
 }
