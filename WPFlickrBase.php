@@ -208,8 +208,6 @@ if (!class_exists('WPFlickrBase')) {
         function flickr_auth_read()
         {
             if (isset($_GET['oauth_verifier']) && isset($_GET['oauth_token'])) {
-                // TODO Fix this once https://github.com/samwilson/phpflickr/issues/50 is resolved.
-                //  For now we need to use the desktop login, and manually persist the access tokens.
                 $token = $this->fw->retrieveAccessToken($_GET['oauth_verifier'], $_GET['oauth_token']);
                 $accessToken = $token->getAccessToken();
                 $accessTokenSecret = $token->getAccessTokenSecret();

@@ -1,23 +1,22 @@
 PHPoAuthLib
 ===========
-**NOTE: I'm looking for someone who could help to maintain this package alongside me, just because I don't have a ton of time to devote to it. However, I'm still going to keep trying to pay attention to PRs, etc.**
 
-PHPoAuthLib provides oAuth support in PHP 7.2+ and is very easy to integrate with any project which requires an oAuth client.
+PHPoAuthLib provides oAuth support in PHP 7.2+ and 8.0+. It's very easy to integrate with any project which requires an oAuth client.
 
-[![Build Status](https://travis-ci.org/Lusitanian/PHPoAuthLib.png?branch=master)](https://travis-ci.org/Lusitanian/PHPoAuthLib)
-[![Code Coverage](https://scrutinizer-ci.com/g/Lusitanian/PHPoAuthLib/badges/coverage.png?s=a0a15bebfda49e79f9ce289b00c6dfebd18fc98e)](https://scrutinizer-ci.com/g/Lusitanian/PHPoAuthLib/)
-[![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/Lusitanian/PHPoAuthLib/badges/quality-score.png?s=c5976d2fefceb501f0d886c1a5bf087e69b44533)](https://scrutinizer-ci.com/g/Lusitanian/PHPoAuthLib/)
-[![Latest Stable Version](https://poser.pugx.org/lusitanian/oauth/v/stable.png)](https://packagist.org/packages/lusitanian/oauth)
-[![Total Downloads](https://poser.pugx.org/lusitanian/oauth/downloads.png)](https://packagist.org/packages/lusitanian/oauth)
+[![Build Status](https://scrutinizer-ci.com/g/carlos-mg89/PHPoAuthLib/badges/build.png?b=master)](https://scrutinizer-ci.com/g/carlos-mg89/PHPoAuthLib/build-status/master)
+[![Code Coverage](https://scrutinizer-ci.com/g/carlos-mg89/PHPoAuthLib/badges/coverage.png?s=master)](https://scrutinizer-ci.com/g/carlos-mg89/PHPoAuthLib/)
+[![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/carlos-mg89/PHPoAuthLib/badges/quality-score.png?s=master)](https://scrutinizer-ci.com/g/carlos-mg89/PHPoAuthLib/)
+[![Latest Stable Version](https://poser.pugx.org/carlos-mg89/oauth/v/stable.png)](https://packagist.org/packages/carlos-mg89/oauth)
+[![Total Downloads](https://poser.pugx.org/carlos-mg89/oauth/downloads.png)](https://packagist.org/packages/carlos-mg89/oauth)
 
 Installation
 ------------
-This library can be found on [Packagist](https://packagist.org/packages/lusitanian/oauth).
+This library can be found on [Packagist](https://packagist.org/packages/carlos-mg89/oauth).
 The recommended way to install this is through [composer](http://getcomposer.org).
 
 
 ```bash
-    composer require lusitanian/oauth
+    composer require carlos-mg89/oauth
 ```
 
 Features
