@@ -323,9 +323,10 @@ if (!class_exists('WPFlickrBase')) {
 
         public function shortcode_flickr_download_gallery($atts)
         {
-            extract(shortcode_atts(array(
+            $attributes = shortcode_atts(array(
                 'id' => $this->get_post_photoset_id()
-            ), $atts));
+            ), $atts);
+            $id = $attributes['id'];
 
             if (empty($id)) {
                 return "Please provide a photo_id.";
@@ -338,9 +339,10 @@ if (!class_exists('WPFlickrBase')) {
         {
             $fw = $this->fw;
 
-            extract(shortcode_atts(array(
+            $attributes = shortcode_atts(array(
                 'id' => $fw->get_photoset_primary_photo($this->get_post_photoset_id())
-            ), $atts));
+            ), $atts);
+            $id = $attributes['id'];
 
             if (empty($id)) {
                 return "Please provide a photo_id.";
@@ -352,9 +354,10 @@ if (!class_exists('WPFlickrBase')) {
 
         public function shortcode_flickr_photoset($atts)
         {
-            extract(shortcode_atts(array(
+            $attributes = shortcode_atts(array(
                 'id' => $this->get_post_photoset_id()
-            ), $atts));
+            ), $atts);
+            $id = $attributes['id'];
 
             if (empty($id)) {
                 return "Please provide a photoset_id.";
@@ -365,9 +368,10 @@ if (!class_exists('WPFlickrBase')) {
 
         public function shortcode_flickr_photoset_fullscreen($atts)
         {
-            extract(shortcode_atts(array(
+            $attributes = shortcode_atts(array(
                 'id' => $this->get_post_photoset_id()
-            ), $atts));
+            ), $atts);
+            $id = $attributes['id'];
 
             if (empty($id)) {
                 return "Please provide a photoset_id.";
