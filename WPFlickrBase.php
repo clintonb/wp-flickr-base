@@ -402,6 +402,10 @@ HTML;
         function portfolio_slideshow($photoset_id, $fullscreen = false, $download = false)
         {
             $data = $this->fw->get_photoset($photoset_id);
+            if(empty($data)) {
+                return NULL;
+            }
+
             return $this->create_photoswipe($data, $fullscreen, $download);
         }
 

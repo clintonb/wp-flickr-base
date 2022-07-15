@@ -9,17 +9,20 @@ if (!class_exists('FlickrWrapper')) {
     class FlickrWrapper
     {
         private PhpFlickr $phpFlickr;
-        private string|NULL $userId;
+        private string|null $userId;
 
         function __construct($api_key, $secret, $userId = NULL, $accessToken = NULL, $accessTokenSecret = NULL)
         {
             $this->userId = $userId;
             $this->phpFlickr = new PhpFlickr($api_key, $secret);
-            $storage = new \OAuth\Common\Storage\Session();
-            $this->phpFlickr->setOauthStorage($storage);
 
             if (!empty($accessToken) && !empty($accessTokenSecret)) {
+                $storage = new \OAuth\Common\Storage\Memory();
+                $this->phpFlickr->setOauthStorage($storage);
                 $this->setAccessToken($accessToken, $accessTokenSecret);
+            } else {
+                $storage = new \OAuth\Common\Storage\Session();
+                $this->phpFlickr->setOauthStorage($storage);
             }
         }
 
@@ -58,7 +61,8 @@ if (!class_exists('FlickrWrapper')) {
             }
         }
 
-        public function getUserId() {
+        public function getUserId()
+        {
             $profileUrl = $this->phpFlickr->urls()->getUserProfile();
             return $this->phpFlickr->urls()->lookupUser($profileUrl)['id'];
         }
@@ -70,7 +74,12 @@ if (!class_exists('FlickrWrapper')) {
                 return NULL;
             }
 
-            $photoset = $this->phpFlickr->photosets()->getPhotos($photoset_id, $this->userId, 'url_l,url_m,url_o,description');
+            try {
+                $photoset = $this->phpFlickr->photosets()->getPhotos($photoset_id, $this->userId, 'url_l,url_m,url_o,description');
+            } catch (Exception $e) {
+                echo "Photoset ${photoset_id} not found!";
+                return NULL;
+            }
 
             // Build a new array
             $data = array();
@@ -78,7 +87,7 @@ if (!class_exists('FlickrWrapper')) {
                 $data[] = array(
                     'title' => $image['title'],
                     'description' => $image['description'],
-                    'url' => $image['url_l'],
+                    'url' => $image['url_l'] ?? $image['url_o'],
                     'orig_url' => $image['url_o'],
                     'thumb_url' => $image['url_m'],
                     'height' => $image['height_m'],
